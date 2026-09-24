@@ -243,9 +243,17 @@ console.log(doc.markdown);
 ```bash
 export BLAZECRAWL_API_KEY=blz_local_...
 blazecrawl scrape https://example.com
+blazecrawl scrape https://example.com --output page.md
 blazecrawl map https://example.com
 blazecrawl crawl https://example.com --max-pages 25 --wait
 ```
+
+Use `scrape --output PATH` to save the result as UTF-8 instead of printing it.
+It uses the same format as stdout: Markdown when available, otherwise JSON.
+Combine with `--json` to save the full JSON response. The parent directory must
+exist; a successful response overwrites the destination file. API errors are
+printed to stderr without modifying the destination, and file-write errors
+return a nonzero exit status.
 
 **MCP** — give an MCP-compatible AI client web-extraction tools while the
 crawler stays self-hosted on your machine:
