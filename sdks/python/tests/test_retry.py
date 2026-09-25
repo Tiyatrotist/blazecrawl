@@ -3,7 +3,7 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from blazecrawl import BlazeCrawl, RateLimitError
+from blazecrawl import BlazeCrawl, RateLimitError, ValidationError
 
 
 def _sync_client(handler, **kwargs):
@@ -64,7 +64,7 @@ def test_non_transient_client_error_is_not_retried():
 
     client = _sync_client(handler, max_attempts=3, backoff_factor=0)
     try:
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             client.scrape("https://example.com")
         assert calls == 1
     finally:
