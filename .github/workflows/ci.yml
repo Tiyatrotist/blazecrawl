@@ -45,6 +45,8 @@ jobs:
         run: cd sdks/python && uv sync --extra dev
       - name: Import check
         run: cd sdks/python && uv run python -c "import blazecrawl; print(blazecrawl.__version__)"
+      - name: Tests
+        run: cd sdks/python && uv run pytest -q
 
   node:
     name: Node SDK + MCP (lint/typecheck/test)
