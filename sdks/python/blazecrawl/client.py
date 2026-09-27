@@ -27,6 +27,9 @@ class BlazeCrawl:
         base_url: Server base URL (falls back to ``BLAZECRAWL_API_URL``,
             default ``http://127.0.0.1:8000``).
         timeout: Request timeout in seconds.
+        max_retries: Number of retries after the initial request for HTTP 429/5xx.
+        backoff_base: Base delay in seconds for exponential retry backoff.
+        backoff_jitter: Maximum random jitter in seconds added to each retry delay.
     """
 
     def __init__(
