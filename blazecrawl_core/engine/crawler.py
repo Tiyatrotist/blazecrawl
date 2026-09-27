@@ -138,7 +138,12 @@ class CrawlManager:
 
             async with self._sem:
                 try:
-                    result = await scrape(url, formats=["markdown", "links"], render="auto")
+                    result = await scrape(
+                        url,
+                        formats=["markdown", "links"],
+                        render="auto",
+                        user_agent=job.user_agent,
+                    )
                     job.pages_crawled += 1
                     job.pages.append(
                         {
