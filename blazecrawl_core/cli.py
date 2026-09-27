@@ -94,6 +94,78 @@ def cmd_crawl(args: argparse.Namespace) -> int:
         return 1
 
 
+
+def _doctor_playwright() -> tuple[bool, str]:
+    try:
+        from playwright.sync_api import sync_playwright
+    except Exception as exc:
+        return False, f"Playwright import failed: {exc}"
+
+    try:
+        with sync_playwright() as playwright:
+            executable = Path(playwright.chromium.executable_path)
+            if executable.exists():
+                return True, f"Chromium available at {executable}"
+            return False, f"Chromium executable is missing: {executable}"
+    except Exception as exc:
+        return False, f"Playwright check failed: {exc}"
+
+
+def _doctor_server() -> tuple[bool, str]:
+    configured_url = os.environ.get("BLAZECRAWL_API_URL")
+    if not configured_url:
+        return True, "Server check skipped (BLAZECRAWL_API_URL is not set)"
+
+    try:
+        with _client() as client:
+            response = client.get("/ready")
+    except httpx.HTTPError as exc:
+        return False, f"Server /ready is unreachable: {exc}"
+
+    if response.status_code >= 400:
+        return False, f"Server /ready returned HTTP {response.status_code}"
+    return True, "Server /ready is reachable"
+
+
+def _doctor_api_key() -> tuple[bool, str]:
+    key = os.environ.get("BLAZECRAWL_API_KEY")
+    configured_url = os.environ.get("BLAZECRAWL_API_URL")
+    if not key:
+        return True, "API key check skipped (BLAZECRAWL_API_KEY is not set)"
+    if not configured_url:
+        return True, "API key check skipped (BLAZECRAWL_API_URL is not set)"
+
+    try:
+        with _client() as client:
+            response = client.get("/v1/crawl/__doctor__")
+    except httpx.HTTPError as exc:
+        return False, f"API key check could not reach the server: {exc}"
+
+    if response.status_code == 401:
+        return False, "API key was rejected by the server"
+    if response.status_code == 404:
+        return True, "API key accepted by the server"
+    if response.status_code < 400:
+        return True, "API key accepted by the server"
+    return False, f"API key check returned unexpected HTTP {response.status_code}"
+
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    checks = [
+        ("Playwright/Chromium", _doctor_playwright()),
+        ("Server readiness", _doctor_server()),
+        ("API key", _doctor_api_key()),
+    ]
+
+    failed = False
+    print("BlazeCrawl doctor")
+    for name, (ok, detail) in checks:
+        marker = "PASS" if ok else "FAIL"
+        print(f"[{marker}] {name}: {detail}")
+        failed = failed or not ok
+    return 1 if failed else 0
+
+
 def cmd_health(args: argparse.Namespace) -> int:
     with _client() as c:
         return _print(c.get("/health"), True)
@@ -131,6 +203,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     h = sub.add_parser("health", help="Check server health")
     h.set_defaults(func=cmd_health)
+    d = sub.add_parser("doctor", help="Check local BlazeCrawl installation and server access")
+    d.set_defaults(func=cmd_doctor)
     return p
 
 
