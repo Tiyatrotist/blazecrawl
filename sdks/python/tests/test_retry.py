@@ -7,7 +7,7 @@ import pytest
 
 import blazecrawl.client as client_module
 from blazecrawl import BlazeCrawl
-from blazecrawl.exceptions import RateLimitError
+from blazecrawl.exceptions import RateLimitError, ValidationError
 
 
 class StubClient:
@@ -80,7 +80,7 @@ def test_non_transient_4xx_is_not_retried(monkeypatch):
         lambda _delay: pytest.fail("validation failures should not be retried"),
     )
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValidationError):
         client.scrape("https://example.com")
 
     assert stub.calls == 1
