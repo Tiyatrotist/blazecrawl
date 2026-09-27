@@ -192,8 +192,6 @@ curl http://localhost:8000/v1/crawl/<job_id> -H "Authorization: Bearer $KEY"
 `user_agent` selects which robots.txt rules a crawl follows. It defaults to
 `BlazeCrawl/0.1.0` and can be set per crawl when a site publishes bot-specific rules.
 
-```
-```
 
 <p align="center">
   <img
