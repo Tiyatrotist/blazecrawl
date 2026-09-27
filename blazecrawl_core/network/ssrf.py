@@ -62,13 +62,35 @@ class PinnedTarget:
     all_ips: tuple[str, ...]
 
 
+def _blocked_address_message(ip) -> str:
+    """Return a user-facing explanation for a blocked address."""
+    mapped = getattr(ip, "ipv4_mapped", None)
+    if mapped is not None:
+        ip = mapped
+
+    value = str(ip)
+    if value == "169.254.169.254":
+        return f"URL resolves to cloud metadata endpoint ({value})"
+    if ip.is_loopback:
+        return f"URL resolves to loopback address ({value})"
+    if ip.is_link_local:
+        return f"URL resolves to link-local address ({value})"
+    if ip.is_private:
+        return f"URL resolves to private IP address ({value})"
+    if ip.is_unspecified:
+        return f"URL resolves to unspecified address ({value})"
+    if ip.is_multicast:
+        return f"URL resolves to multicast address ({value})"
+    return f"URL resolves to reserved or non-public address ({value})"
+
+
 def _classify_resolved_ip(ip_str: str) -> None:
     """Raise if a *resolved* IP literal falls in a blocked range."""
     parsed = parse_ip_literal(ip_str)
     if parsed is None:
         raise SSRFValidationError(f"Unparseable resolved address: {ip_str!r}")
     if is_blocked_address(parsed):
-        raise SSRFValidationError("Cannot access private, local, or reserved addresses")
+        raise SSRFValidationError(_blocked_address_message(parsed))
 
 
 def _parse_and_check_url(url: str, allowed_schemes: tuple[str, ...]) -> tuple[str, str, int]:
@@ -88,7 +110,7 @@ def _parse_and_check_url(url: str, allowed_schemes: tuple[str, ...]) -> tuple[st
 
     literal = parse_ip_literal(hostname)
     if literal is not None and is_blocked_address(literal):
-        raise SSRFValidationError("Cannot access private, local, or reserved addresses")
+        raise SSRFValidationError(_blocked_address_message(literal))
 
     try:
         port = parsed.port if parsed.port is not None else DEFAULT_PORTS[scheme]
