@@ -29,3 +29,21 @@ except BlazeCrawlError as exc:
 
 `map()` discovers site URLs. `crawl()` starts a crawl and returns its job
 reference; poll that job through the client API until it completes.
+
+
+### Retry transient responses
+
+The Python SDK retries HTTP `429` and `5xx` responses with bounded exponential
+backoff and jitter. By default it retries twice after the initial request.
+
+```python
+client = BlazeCrawl(
+    api_key="blz_local_...",
+    max_retries=2,
+    backoff_base=0.25,
+    backoff_jitter=0.1,
+)
+```
+
+Set `max_retries=0` to disable retries. Validation/authentication failures and
+other non-transient `4xx` responses are never retried.
