@@ -21,6 +21,7 @@ class ScrapeRequest(BaseModel):
     timeout_ms: int | None = Field(default=None, ge=1000, le=120000)
     render: Literal["auto", "static", "browser"] = "auto"
     use_cache: bool = True
+    user_agent: str = Field(default=DEFAULT_USER_AGENT, min_length=1, max_length=200)
 
     @field_validator("url")
     @classmethod
