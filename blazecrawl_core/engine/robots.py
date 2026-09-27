@@ -21,9 +21,9 @@ from blazecrawl_core.network.ssrf import SSRFValidationError
 
 logger = get_logger(__name__)
 
-__all__ = ["clear_cache", "get_crawl_delay", "is_allowed"]
+__all__ = ["DEFAULT_USER_AGENT", "clear_cache", "get_crawl_delay", "is_allowed"]
 
-_DEFAULT_UA = "*"
+DEFAULT_USER_AGENT = "BlazeCrawl/0.1.0"
 
 
 @dataclass(frozen=True)
@@ -89,7 +89,7 @@ async def _get_parser(url: str) -> _RobotsParser | None:
     return rp
 
 
-async def is_allowed(url: str, user_agent: str = _DEFAULT_UA) -> bool:
+async def is_allowed(url: str, user_agent: str = DEFAULT_USER_AGENT) -> bool:
     """Return True when robots.txt permits fetching ``url``.
 
     Fetches/parses robots.txt (cached per-origin). On fetch/parse failure we
@@ -138,7 +138,7 @@ def _robots_pattern_matches(pattern: str, target: str) -> bool:
     return re.fullmatch(regex, target) is not None
 
 
-async def get_crawl_delay(url: str, user_agent: str = _DEFAULT_UA) -> float | None:
+async def get_crawl_delay(url: str, user_agent: str = DEFAULT_USER_AGENT) -> float | None:
     """Return the crawl-delay in seconds for user_agent if specified, else None."""
     robots = await _get_parser(url)
     if robots is None:
