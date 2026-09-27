@@ -3,6 +3,8 @@
 These are release-blocking. Every vector must be rejected before any network IO.
 """
 
+import re
+
 import pytest
 
 from blazecrawl_core.network.ip_utils import is_blocked_address, is_private_ip, parse_ip_literal
@@ -57,3 +59,33 @@ async def test_public_target_allowed():
     assert target.hostname == "example.com"
     assert target.ip
     assert target.scheme == "https"
+
+
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("http://10.0.0.5/", "private IP address (10.0.0.5)"),
+        ("http://127.0.0.1/", "loopback address (127.0.0.1)"),
+        (
+            "http://169.254.169.254/latest/meta-data",
+            "cloud metadata endpoint (169.254.169.254)",
+        ),
+        ("http://[fe80::1]/", "link-local address (fe80::1)"),
+    ],
+)
+async def test_blocked_literal_reports_specific_reason(url, expected):
+    with pytest.raises(SSRFValidationError, match=re.escape(expected)):
+        await validate_and_pin(url)
+
+
+async def test_blocked_dns_result_reports_specific_reason(monkeypatch):
+    async def resolve_private(_hostname, _port):
+        return ["10.23.4.5"]
+
+    monkeypatch.setattr("blazecrawl_core.network.ssrf._resolve", resolve_private)
+
+    with pytest.raises(
+        SSRFValidationError,
+        match=re.escape("private IP address (10.23.4.5)"),
+    ):
+        await validate_and_pin("https://example.test/")
