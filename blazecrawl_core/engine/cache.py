@@ -74,8 +74,12 @@ def make_key(
     formats: list[str] | None,
     only_main_content: bool,
     render: str = "auto",
+    user_agent: str = "BlazeCrawl/0.1.0",
 ) -> str:
-    base = f"{url}|{sorted(formats or ['markdown'])}|{int(only_main_content)}|{render}"
+    base = (
+        f"{url}|{sorted(formats or ['markdown'])}|{int(only_main_content)}|"
+        f"{render}|{user_agent}"
+    )
     return "bc:scrape:" + hashlib.sha256(base.encode()).hexdigest()
 
 
@@ -84,9 +88,12 @@ async def get_cached(
     formats: list[str] | None,
     only_main_content: bool,
     render: str = "auto",
+    user_agent: str = "BlazeCrawl/0.1.0",
 ) -> dict | None:
     try:
-        raw = await _get_cache().get(make_key(url, formats, only_main_content, render))
+        raw = await _get_cache().get(
+            make_key(url, formats, only_main_content, render, user_agent)
+        )
         return json.loads(raw) if raw else None
     except Exception as e:
         logger.warning("Cache get failed", error=str(e))
@@ -100,10 +107,11 @@ async def set_cached(
     payload: dict,
     ttl: int | None = None,
     render: str = "auto",
+    user_agent: str = "BlazeCrawl/0.1.0",
 ) -> None:
     try:
         await _get_cache().set(
-            make_key(url, formats, only_main_content, render),
+            make_key(url, formats, only_main_content, render, user_agent),
             json.dumps(payload),
             ttl or settings.CACHE_DEFAULT_TTL_SECONDS,
         )
