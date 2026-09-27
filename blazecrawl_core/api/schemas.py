@@ -6,6 +6,8 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
 
+from blazecrawl_core.engine.robots import DEFAULT_USER_AGENT
+
 
 class ScrapeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -54,6 +56,7 @@ class CrawlRequest(BaseModel):
     url: HttpUrl
     max_pages: int | None = Field(default=None, ge=1, le=1000)
     max_depth: int | None = Field(default=None, ge=0, le=5)
+    user_agent: str = Field(default=DEFAULT_USER_AGENT, min_length=1, max_length=200)
 
     @field_validator("url")
     @classmethod
