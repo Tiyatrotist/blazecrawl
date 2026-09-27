@@ -34,6 +34,7 @@ class CrawlJobState:
     status: str = "queued"  # queued|running|completed|failed|cancelled
     max_pages: int = settings.CRAWL_MAX_PAGES_DEFAULT
     max_depth: int = settings.CRAWL_MAX_DEPTH_DEFAULT
+    user_agent: str = robots.DEFAULT_USER_AGENT
     pages: list[dict] = field(default_factory=list)
     pages_crawled: int = 0
     pages_failed: int = 0
@@ -49,6 +50,7 @@ class CrawlJobState:
             "pages_crawled": self.pages_crawled,
             "pages_failed": self.pages_failed,
             "max_pages": self.max_pages,
+            "user_agent": self.user_agent,
             "error": self.error,
             "pages": self.pages,
         }
@@ -62,12 +64,19 @@ class CrawlManager:
         self._tasks: dict[str, asyncio.Task] = {}
         self._sem = asyncio.Semaphore(settings.CRAWL_MAX_CONCURRENCY)
 
-    def create_job(self, seed: str, max_pages: int | None, max_depth: int | None) -> CrawlJobState:
+    def create_job(
+        self,
+        seed: str,
+        max_pages: int | None,
+        max_depth: int | None,
+        user_agent: str = robots.DEFAULT_USER_AGENT,
+    ) -> CrawlJobState:
         job = CrawlJobState(
             job_id=str(uuid.uuid4()),
             seed=seed,
             max_pages=max_pages or settings.CRAWL_MAX_PAGES_DEFAULT,
             max_depth=max_depth or settings.CRAWL_MAX_DEPTH_DEFAULT,
+            user_agent=user_agent,
         )
         self._jobs[job.job_id] = job
         self._tasks[job.job_id] = asyncio.create_task(self._run(job))
@@ -121,7 +130,9 @@ class CrawlManager:
                 continue
 
             # robots.txt
-            if settings.RESPECT_ROBOTS_TXT and not await robots.is_allowed(url):
+            if settings.RESPECT_ROBOTS_TXT and not await robots.is_allowed(
+                url, user_agent=job.user_agent
+            ):
                 logger.info("Crawl skipping robots-disallowed URL", url=url)
                 continue
 
