@@ -184,9 +184,15 @@ curl -X POST http://localhost:8000/v1/map \
 ```bash
 curl -X POST http://localhost:8000/v1/crawl \
   -H "Authorization: Bearer $KEY" -H "Content-Type: application/json" \
-  -d '{"url":"https://example.com","max_pages":25,"max_depth":2}'
+  -d '{"url":"https://example.com","max_pages":25,"max_depth":2,"user_agent":"ResearchBot/2.4"}'
 # → {"job_id":"...","status_url":"/v1/crawl/..."}
 curl http://localhost:8000/v1/crawl/<job_id> -H "Authorization: Bearer $KEY"
+```
+
+`user_agent` selects which robots.txt rules a crawl follows. It defaults to
+`BlazeCrawl/0.1.0` and can be set per crawl when a site publishes bot-specific rules.
+
+```
 ```
 
 <p align="center">
