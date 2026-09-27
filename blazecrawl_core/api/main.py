@@ -159,7 +159,12 @@ async def crawl_endpoint(payload: CrawlRequest) -> CrawlJobResponse:
         ) from e
 
     manager = get_crawl_manager()
-    job = manager.create_job(str(payload.url), payload.max_pages, payload.max_depth)
+    job = manager.create_job(
+        str(payload.url),
+        payload.max_pages,
+        payload.max_depth,
+        user_agent=payload.user_agent,
+    )
     return CrawlJobResponse(
         success=True,
         job_id=job.job_id,
