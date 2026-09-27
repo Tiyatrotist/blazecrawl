@@ -131,6 +131,36 @@ def test_url_normalization_edge_cases():
             pytest.fail(f"URL normalizer crashed on '{url}': {e}")
 
 
+@pytest.mark.parametrize(
+    ("url", "expected"),
+    [
+        ("HTTPS://EXAMPLE.COM:443/docs/", "https://example.com/docs"),
+        ("http://Example.com:80/path", "http://example.com/path"),
+        ("https://example.com:8443/path", "https://example.com:8443/path"),
+        ("https://example.com/docs#install", "https://example.com/docs"),
+        (
+            "https://example.com/?utm_source=test&b=2&a=1",
+            "https://example.com?a=1&b=2",
+        ),
+        ("https://example.com/%7Euser", "https://example.com/~user"),
+        ("https://user:secret@example.com/path", "https://example.com/path"),
+        ("https://example.com/a/./b/../c", "https://example.com/a/c"),
+        ("https://example.com/a///b//c", "https://example.com/a/b/c"),
+        ("https://example.com/café", "https://example.com/caf%C3%A9"),
+        ("https://example.com/?flag", "https://example.com?flag"),
+        (
+            "https://example.com/?z=2&z=1&a=3",
+            "https://example.com?a=3&z=1&z=2",
+        ),
+    ],
+)
+def test_url_normalization_additional_edge_cases(url, expected):
+    """Cover canonicalization details that are security/cache-key sensitive."""
+    from blazecrawl_core.engine.url_normalizer import get_url_normalizer
+
+    assert get_url_normalizer().normalize(url) == expected
+
+
 @pytest.mark.anyio
 async def test_html_extraction_malformed_input():
     """Test HTML extractor handles malformed input."""
