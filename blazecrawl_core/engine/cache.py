@@ -76,10 +76,7 @@ def make_key(
     render: str = "auto",
     user_agent: str = "BlazeCrawl/0.1.0",
 ) -> str:
-    base = (
-        f"{url}|{sorted(formats or ['markdown'])}|{int(only_main_content)}|"
-        f"{render}|{user_agent}"
-    )
+        base = f"{url}|{sorted(formats or ['markdown'])}|{int(only_main_content)}|{render}|{user_agent}"    )
     return "bc:scrape:" + hashlib.sha256(base.encode()).hexdigest()
 
 
