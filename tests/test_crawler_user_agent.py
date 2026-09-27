@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from blazecrawl_core.api.schemas import CrawlRequest
-from blazecrawl_core.engine import crawler, robots
+from blazecrawl_core.api.schemas import CrawlRequest, ScrapeRequest
+from blazecrawl_core.engine import cache, crawler, robots
 from blazecrawl_core.engine.crawler import CrawlJobState, CrawlManager
 
 
@@ -50,3 +50,20 @@ async def test_crawler_passes_job_user_agent_to_robots(monkeypatch):
 def test_crawl_request_rejects_invalid_user_agent(user_agent):
     with pytest.raises(ValueError):
         CrawlRequest(url="https://example.com", user_agent=user_agent)
+
+
+def test_scrape_request_accepts_custom_user_agent():
+    request = ScrapeRequest(url="https://example.com", user_agent="ResearchBot/2.4")
+
+    assert request.user_agent == "ResearchBot/2.4"
+
+
+def test_scrape_cache_key_varies_by_user_agent():
+    first = cache.make_key(
+        "https://example.com", ["markdown"], True, "auto", "ResearchBot/1.0"
+    )
+    second = cache.make_key(
+        "https://example.com", ["markdown"], True, "auto", "ResearchBot/2.0"
+    )
+
+    assert first != second
